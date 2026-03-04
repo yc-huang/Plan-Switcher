@@ -1,0 +1,38 @@
+{
+  "name": "plan-switcher",
+  "version": "1.0.0",
+  "description": "Plan Switcher - Standalone Proxy Server for API Key Management",
+  "main": "server.js",
+  "bin": "server.js",
+  "pkg": {
+    "targets": [
+      "node18-linux-x64",
+      "node18-macos-x64",
+      "node18-win-x64"
+    ],
+    "outputPath": "dist",
+    "assets": [
+      "public/**/*"
+    ]
+  },
+  "scripts": {
+    "start": "node server.js",
+    "build": "pkg .",
+    "build:linux": "pkg . --targets node18-linux-x64",
+    "build:mac": "pkg . --targets node18-macos-x64",
+    "build:win": "pkg . --targets node18-win-x64",
+    "build:all": "pkg . --targets node18-linux-x64,node18-macos-x64,node18-win-x64"
+  },
+  "keywords": [
+    "plan-switcher",
+    "failover",
+    "proxy",
+    "api-key",
+    "rate-limit"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@yao-pkg/pkg": "^5.11.0"
+  }
+}
