@@ -1,6 +1,6 @@
 # Plan Switcher
 
-**Plan Switcher** 是一个独立的代理服务器，用于在 API 限流时自动切换 API Key。专为 AI 编程工具（如 Claude Code、Cursor、Aider 等）设计。
+**Plan Switcher** 是一个独立的代理服务器，用于在 API 限流时自动切换 API Key。专为 AI 编程工具（如 Claude Code、Cursor、Aider 等）和运行OpenClaw之类的Agent应用设计。
 
 [English](#english) | [中文](#中文)
 
@@ -68,6 +68,98 @@ claude
 # 在设置中配置 Base URL: http://127.0.0.1:8765/proxy/v1
 ```
 
+### 应用场景：OpenClaw
+
+[OpenClaw](https://github.com/OpenClawHQ/openclaw) 是一款跨平台 AI 助手工具，支持 macOS/Linux/Windows(WSL2)。它可以集成多种 AI 编程工具（如 Claude Code、Codex CLI 等），并通过 Skills 功能实现自动化工作流。
+
+#### 为什么选择 OpenClaw + Plan Switcher？
+
+1. **统一入口管理**：OpenClaw 可以通过一个界面调用多个 AI 编程工具，配合 Plan Switcher 实现多 Plan 自动切换
+2. **成本优化**：OpenClaw 支持接入国产 Coding Plan（如火山的方舟 Coding Plan、阿里云百炼等），Plan Switcher 可以在多个 Plan 间自动切换
+3. **无感切换**：当一个 Plan 限流时，自动切换到下一个可用 Plan，保证工作流不中断
+
+#### OpenClaw 配置方法
+
+**方式一：通过配置文件**
+
+编辑 OpenClaw 配置文件（通常位于 `~/.openclaw/config.json` 或 `~/.openclaw/models.json`）：
+
+```json
+{
+  "models": {
+    "providers": {
+      "plan-switcher": {
+        "name": "Plan Switcher",
+        "baseURL": "http://127.0.0.1:8765/proxy/v1",
+        "apiKey": "any-key",
+        "models": ["claude-sonnet-4", "deepseek-chat", "GLM-5"]
+      }
+    }
+  }
+}
+```
+
+**方式二：通过命令行配置**
+
+```bash
+# 配置 OpenAI 兼容端点
+openclaw auth openai baseURL http://127.0.0.1:8765/proxy/v1
+openclaw auth openai apiKey any-key
+
+# 或配置 Anthropic 兼容端点
+openclaw auth anthropic baseURL http://127.0.0.1:8765/proxy/v1
+openclaw auth anthropic apiKey any-key
+```
+
+**方式三：配置多个 Coding Plan 提供商**
+
+如果使用不同供应商的 Coding Plan，可以为每个 Plan 配置独立的 Provider：
+
+```json
+{
+  "models": {
+    "providers": {
+      "zhipu-coding": {
+        "name": "智谱 GLM Coding",
+        "baseURL": "https://open.bigmodel.cn/api/anthropic",
+        "apiKey": "your-zhipu-api-key",
+        "models": ["GLM-5"]
+      },
+      "doubao-coding": {
+        "name": "火山方舟 Coding",
+        "baseURL": "https://ark.cn-beijing.volces.com/api/coding",
+        "apiKey": "your-doubao-api-key",
+        "models": ["ark-code-latest"]
+      },
+      "qwen-coding": {
+        "name": "阿里云百炼 Coding",
+        "baseURL": "https://coding.dashscope.aliyuncs.com/v1",
+        "apiKey": "sk-sp-your-key",
+        "models": ["Qwen3-Coder-Next"]
+      }
+    }
+  }
+}
+```
+
+然后在 Plan Switcher 管理界面中添加这些 Plan，系统会在一个 Plan 限流时自动切换到下一个。
+
+#### 结合 Claude Code Skill
+
+OpenClaw 的 Coding Agent Skill 可以直接调用 Claude Code，配合 Plan Switcher 使用：
+
+```bash
+# 先启动 Plan Switcher
+./plan-switcher-linux
+
+# 配置环境变量后启动 OpenClaw
+export ANTHROPIC_BASE_URL="http://127.0.0.1:8765/proxy/v1"
+export ANTHROPIC_API_KEY="any-key"
+openclaw
+```
+
+这样当 Claude Code 通过 OpenClaw 调用时，如果遇到限流，Plan Switcher 会自动切换到备用 Plan。
+
 ### API 端点
 
 | 端点 | 说明 |
@@ -106,16 +198,17 @@ claude
 
 #### 💻 Coding Plan 专用端点（推荐用于 AI 编程工具）
 
-> ⚠️ **重要**：这些端点专为 AI 编程工具（如 Claude Code、Cursor）优化，需要单独订阅对应的 Coding Plan 套餐。
+> ⚠️ **重要**：这些端点专为 AI 编程工具（如 Claude Code、Cursor、OpenClaw）优化，需要单独订阅对应的 Coding Plan 套餐。
 
-| Provider | 端点 | 说明 | API Key 格式 |
-|----------|------|------|-------------|
-| **智谱AI Coding Plan** | `https://open.bigmodel.cn/api/coding/paas/v4` | GLM Coding 套餐专用 | 标准 API Key |
-| **阿里云百炼 Coding Plan** | `https://coding.dashscope.aliyuncs.com/v1` | Qwen Coding 套餐专用 | `sk-sp-xxxxx` |
-| **月之暗面 Kimi Coding** | `https://api.moonshot.cn/anthropic` | Kimi Coding Plan (Anthropic 兼容) | 标准 API Key |
-| **MiniMax Coding (国内)** | `https://api.minimax.chat/anthropic` | MiniMax Coding Plan (Anthropic 兼容) | 标准 API Key |
-| **MiniMax Coding (国际)** | `https://api.minimax.io/anthropic` | MiniMax Coding Plan (Anthropic 兼容) | 标准 API Key |
-| **火山引擎方舟 Coding Plan** | `https://ark.cn-beijing.volces.com/api/coding/v3` | 豆包编程模型专用 | 标准 API Key |
+| Provider | 端点 | 推荐模型 | 说明 |
+|----------|------|---------|------|
+| **智谱AI GLM Coding** | `https://open.bigmodel.cn/api/anthropic` | `GLM-5` | Anthropic 兼容端点 |
+| **阿里云百炼 Coding** | `https://coding.dashscope.aliyuncs.com/v1` | `Qwen3-Coder-Next` | OpenAI 兼容，Key 格式 `sk-sp-xxxxx` |
+| **月之暗面 Kimi Coding** | `https://api.moonshot.cn/anthropic` | `kimi-k2` | Anthropic 兼容端点 |
+| **MiniMax Coding (国内)** | `https://api.minimax.chat/anthropic` | `MiniMax-M2.5` | Anthropic 兼容端点 |
+| **MiniMax Coding (国际)** | `https://api.minimax.io/anthropic` | `MiniMax-M2.5` | Anthropic 兼容端点 |
+| **火山方舟 Coding (Anthropic)** | `https://ark.cn-beijing.volces.com/api/coding` | `ark-code-latest` | Anthropic 兼容端点 |
+| **火山方舟 Coding (OpenAI)** | `https://ark.cn-beijing.volces.com/api/coding/v3` | `ark-code-latest` | OpenAI 兼容端点 |
 
 ### 为什么需要区分 Coding Plan 端点？
 
@@ -131,11 +224,11 @@ claude
 
 | 供应商 | 套餐价格 | 支持模型 | 特点 |
 |--------|---------|----------|------|
-| 智谱AI | ¥20-100/月 | GLM-4.7, GLM-Coder | 国内最早推出，支持20+编程工具 |
-| 阿里云百炼 | ¥9.9起/月 | Qwen-Coder系列 | API Key格式特殊 `sk-sp-xxxxx` |
-| 月之暗面 Kimi | ¥49/月 | Kimi K2 | Anthropic 兼容端点 |
-| MiniMax | 待定 | MiniMax-M2.5 | 国内外双端点 |
-| 火山引擎方舟 | ¥8.9起/月 | Doubao-Seed-Code, GLM-4.7, DeepSeek-V3.2, Kimi-K2 | 多模型聚合，支持Auto模式 |
+| 智谱AI | ¥20-100/月 | GLM-5, GLM-4.7 | 国内最早推出，支持20+编程工具，Anthropic 兼容 |
+| 阿里云百炼 | ¥7.9起/月 | Qwen3.5-Plus, Qwen3-Coder-Next | API Key格式特殊 `sk-sp-xxxxx`，聚合多家模型 |
+| 月之暗面 Kimi | ¥49/月 | Kimi-K2, Kimi-K2.5 | Anthropic 兼容端点，视觉编程能力强 |
+| MiniMax | $10/月 | MiniMax-M2.5 | 国内外双端点，性价比高 |
+| 火山引擎方舟 | ¥8.9起/月 | Doubao-Seed-Code, GLM-4.7, DeepSeek-V3.2, Kimi-K2 | 多模型聚合，支持 Auto 模式自动选择 |
 
 ### 配置说明
 
@@ -231,6 +324,98 @@ claude
 # Configure Base URL in settings: http://127.0.0.1:8765/proxy/v1
 ```
 
+### Use Case: OpenClaw
+
+[OpenClaw](https://github.com/OpenClawHQ/openclaw) is a cross-platform AI assistant tool supporting macOS/Linux/Windows(WSL2). It integrates multiple AI coding tools (like Claude Code, Codex CLI, etc.) and enables automated workflows through Skills.
+
+#### Why OpenClaw + Plan Switcher?
+
+1. **Unified Entry Point**: OpenClaw can call multiple AI coding tools from one interface, with Plan Switcher handling automatic multi-Plan switching
+2. **Cost Optimization**: OpenClaw supports Chinese Coding Plans (like Volcano Ark, Alibaba Qwen), and Plan Switcher automatically switches between plans
+3. **Seamless Failover**: When one Plan hits rate limits, automatically switch to the next available Plan
+
+#### OpenClaw Configuration
+
+**Method 1: Via Config File**
+
+Edit OpenClaw config file (usually at `~/.openclaw/config.json` or `~/.openclaw/models.json`):
+
+```json
+{
+  "models": {
+    "providers": {
+      "plan-switcher": {
+        "name": "Plan Switcher",
+        "baseURL": "http://127.0.0.1:8765/proxy/v1",
+        "apiKey": "any-key",
+        "models": ["claude-sonnet-4", "deepseek-chat", "GLM-5"]
+      }
+    }
+  }
+}
+```
+
+**Method 2: Via Command Line**
+
+```bash
+# Configure OpenAI compatible endpoint
+openclaw auth openai baseURL http://127.0.0.1:8765/proxy/v1
+openclaw auth openai apiKey any-key
+
+# Or configure Anthropic compatible endpoint
+openclaw auth anthropic baseURL http://127.0.0.1:8765/proxy/v1
+openclaw auth anthropic apiKey any-key
+```
+
+**Method 3: Configure Multiple Coding Plan Providers**
+
+For using different Coding Plan providers, configure each Plan as a separate Provider:
+
+```json
+{
+  "models": {
+    "providers": {
+      "zhipu-coding": {
+        "name": "Zhipu GLM Coding",
+        "baseURL": "https://open.bigmodel.cn/api/anthropic",
+        "apiKey": "your-zhipu-api-key",
+        "models": ["GLM-5"]
+      },
+      "doubao-coding": {
+        "name": "Volcano Ark Coding",
+        "baseURL": "https://ark.cn-beijing.volces.com/api/coding",
+        "apiKey": "your-doubao-api-key",
+        "models": ["ark-code-latest"]
+      },
+      "qwen-coding": {
+        "name": "Alibaba Qwen Coding",
+        "baseURL": "https://coding.dashscope.aliyuncs.com/v1",
+        "apiKey": "sk-sp-your-key",
+        "models": ["Qwen3-Coder-Next"]
+      }
+    }
+  }
+}
+```
+
+Then add these Plans in Plan Switcher admin UI. The system will automatically switch to the next Plan when one is rate-limited.
+
+#### Using with Claude Code Skill
+
+OpenClaw's Coding Agent Skill can directly invoke Claude Code with Plan Switcher:
+
+```bash
+# Start Plan Switcher first
+./plan-switcher-linux
+
+# Configure environment and start OpenClaw
+export ANTHROPIC_BASE_URL="http://127.0.0.1:8765/proxy/v1"
+export ANTHROPIC_API_KEY="any-key"
+openclaw
+```
+
+When Claude Code is invoked through OpenClaw and hits rate limits, Plan Switcher will automatically switch to a backup Plan.
+
 ### API Endpoints
 
 | Endpoint | Description |
@@ -269,16 +454,17 @@ claude
 
 #### 💻 Coding Plan Specific Endpoints (Recommended for AI Coding Tools)
 
-> ⚠️ **Important**: These endpoints are optimized for AI coding tools (Claude Code, Cursor, etc.) and require separate Coding Plan subscription.
+> ⚠️ **Important**: These endpoints are optimized for AI coding tools (Claude Code, Cursor, OpenClaw, etc.) and require separate Coding Plan subscription.
 
-| Provider | Endpoint | Description | API Key Format |
-|----------|----------|-------------|----------------|
-| **Zhipu AI Coding Plan** | `https://open.bigmodel.cn/api/coding/paas/v4` | GLM Coding Plan specific | Standard API Key |
-| **Alibaba Qwen Coding Plan** | `https://coding.dashscope.aliyuncs.com/v1` | Qwen Coding Plan specific | `sk-sp-xxxxx` |
-| **Kimi Coding Plan** | `https://api.moonshot.cn/anthropic` | Kimi Coding (Anthropic compatible) | Standard API Key |
-| **MiniMax Coding (China)** | `https://api.minimax.chat/anthropic` | MiniMax Coding Plan (Anthropic compatible) | Standard API Key |
-| **MiniMax Coding (International)** | `https://api.minimax.io/anthropic` | MiniMax Coding Plan (Anthropic compatible) | Standard API Key |
-| **Volcengine Ark Coding Plan** | `https://ark.cn-beijing.volces.com/api/coding/v3` | Doubao coding models | Standard API Key |
+| Provider | Endpoint | Recommended Model | Description |
+|----------|----------|------------------|-------------|
+| **Zhipu AI GLM Coding** | `https://open.bigmodel.cn/api/anthropic` | `GLM-5` | Anthropic compatible |
+| **Alibaba Qwen Coding** | `https://coding.dashscope.aliyuncs.com/v1` | `Qwen3-Coder-Next` | OpenAI compatible, Key format `sk-sp-xxxxx` |
+| **Kimi Coding Plan** | `https://api.moonshot.cn/anthropic` | `kimi-k2` | Anthropic compatible |
+| **MiniMax Coding (China)** | `https://api.minimax.chat/anthropic` | `MiniMax-M2.5` | Anthropic compatible |
+| **MiniMax Coding (International)** | `https://api.minimax.io/anthropic` | `MiniMax-M2.5` | Anthropic compatible |
+| **Volcano Ark Coding (Anthropic)** | `https://ark.cn-beijing.volces.com/api/coding` | `ark-code-latest` | Anthropic compatible |
+| **Volcano Ark Coding (OpenAI)** | `https://ark.cn-beijing.volces.com/api/coding/v3` | `ark-code-latest` | OpenAI compatible |
 
 ### Why Separate Coding Plan Endpoints?
 
@@ -294,11 +480,11 @@ Many Chinese providers offer specialized **Coding Plans** with these differences
 
 | Provider | Price | Supported Models | Features |
 |----------|-------|------------------|----------|
-| Zhipu AI | ¥20-100/month | GLM-4.7, GLM-Coder | First to launch, supports 20+ coding tools |
-| Alibaba Qwen | ¥9.9+/month | Qwen-Coder series | Special API Key format `sk-sp-xxxxx` |
-| Kimi (Moonshot) | ¥49/month | Kimi K2 | Anthropic compatible endpoint |
-| MiniMax | TBD | MiniMax-M2.5 | Dual endpoints (China/International) |
-| Volcengine Ark | ¥8.9+/month | Doubao-Seed-Code, GLM-4.7, DeepSeek-V3.2, Kimi-K2 | Multi-model aggregation, Auto mode |
+| Zhipu AI | ¥20-100/month | GLM-5, GLM-4.7 | First to launch, supports 20+ coding tools, Anthropic compatible |
+| Alibaba Qwen | ¥7.9+/month | Qwen3.5-Plus, Qwen3-Coder-Next | Special API Key format `sk-sp-xxxxx`, multi-provider aggregation |
+| Kimi (Moonshot) | ¥49/month | Kimi-K2, Kimi-K2.5 | Anthropic compatible endpoint, strong visual coding |
+| MiniMax | $10/month | MiniMax-M2.5 | Dual endpoints (China/International), great value |
+| Volcano Ark | ¥8.9+/month | Doubao-Seed-Code, GLM-4.7, DeepSeek-V3.2, Kimi-K2 | Multi-model aggregation, Auto mode for automatic selection |
 
 ### Configuration
 
