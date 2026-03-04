@@ -1,6 +1,6 @@
 # Plan Switcher
 
-**Plan Switcher** 是一个独立的代理服务器，用于在 API 限流时自动切换 API Key。专为 AI 编程工具（如 Claude Code、Cursor、Aider 等）和运行OpenClaw之类的Agent应用设计。
+**Plan Switcher** 是一个为 Claude Code、Open Claw 等 AI 编码助手和Agent应用设计的智能代理工具。当某个低价套餐遇到限流时，自动切换到其他可用套餐，让你无需购买昂贵的高级套餐，只需聚合多个入门级套餐即可享受不间断服务。开源**免费**,纯本地运行，**安全**可靠。
 
 [English](#english) | [中文](#中文)
 
@@ -263,13 +263,15 @@ npm run build:win
 ---
 
 ## English
+**Plan-Switcher** is a smart proxy tool designed for AI coding agents like Claude Code, Open Claw, and similar services. It automatically switches between multiple low-cost coding plans when one hits rate limits or quota exhaustion, allowing you to enjoy uninterrupted service without purchasing expensive high-tier plans.
+
+Instead of relying on a single costly subscription, you can aggregate several affordable entry-level plans and let **Plan-Switcher** handle the failover seamlessly. This ensures your coding workflow continues smoothly while saving costs.
 
 ### Features
 
 - 🔄 **Auto-Switch**: Automatically switches to next available Plan when API returns 429 rate limit error
 - ⚡ **Seamless Proxy**: Compatible with OpenAI API format, just replace base_url
 - 🌐 **Multi-Provider Support**: Supports Anthropic, OpenAI, DeepSeek, Qwen and more
-- 💻 **Coding Plan Support**: Built-in endpoints for Chinese providers' Coding Plans
 - 📊 **Web Dashboard**: Built-in web management UI with Chinese/English language switching
 - 🚀 **Auto-Open Browser**: Automatically opens browser on startup (can disable with `--no-browser`)
 - 💾 **Data Persistence**: Configuration and Plan data automatically saved to local files
