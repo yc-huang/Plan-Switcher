@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan Switcher</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --bg: #ffffff;
+      --bg-secondary: #f8fafc;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-secondary: #64748b;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --bg-secondary: #1e293b;
+        --border: #334155;
+        --text: #f1f5f9;
+        --text-secondary: #94a3b8;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 0;
+      margin-bottom: 24px;
+    }
+
+    header .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    h1 span {
+      color: var(--text-secondary);
+      font-weight: 400;
+      font-size: 14px;
+      display: block;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .lang-switch {
+      display: flex;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .lang-btn {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .lang-btn:hover {
+      color: var(--text);
+    }
+
+    .lang-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .uptime {
+      font-family: monospace;
+      font-size: 12px;
+      background: var(--bg-secondary);
+      padding: 4px 8px;
+      border-radius: 4px;
+      color: var(--text-secondary);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: var(--bg);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: var(--text);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .stat-card .label {
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .stat-card .value.success { color: var(--success); }
+    .stat-card .value.warning { color: var(--warning); }
+    .stat-card .value.danger { color: var(--danger); }
+
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .card-subtitle {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .plan-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .plan-info h3 {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .plan-info p {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-cooldown { background: #fef9c3; color: #854d0e; }
+    .badge-disabled { background: #fee2e2; color: #991b1b; }
+    .badge-current { background: var(--primary); color: white; }
+
+    .plan-stats {
+      text-align: right;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .plan-stats .rate {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: #fee2e2;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--bg);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow: auto;
+      margin: 20px;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    pre {
+      background: var(--bg-secondary);
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    code {
+      font-family: 'Monaco', 'Menlo', monospace;
+      background: var(--bg-secondary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .alert-warning {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+
+    .alert-info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+    }
+
+    .config-section h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text-secondary);
+    }
+
+    .config-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .config-item:last-child {
+      border-bottom: none;
+    }
+
+    .config-value {
+      font-family: monospace;
+      background: var(--bg-secondary);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 200;
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .toast-error {
+      background: var(--danger);
+      color: white;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(100px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .plan-error {
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: #fee2e2;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #991b1b;
+    }
+
+    .plan-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .plan-meta span {
+      color: var(--text-secondary);
+    }
+
+    .collapsible {
+      cursor: pointer;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .collapsible:hover {
+      background: var(--bg-secondary);
+    }
+
+    .collapsible-content {
+      display: none;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      margin-top: -8px;
+      margin-bottom: 8px;
+    }
+
+    .collapsible-content.show {
+      display: block;
+    }
+
+    .arrow {
+      transition: transform 0.2s;
+    }
+
+    .arrow.open {
+      transform: rotate(180deg);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="header-left">
+        <h1>
+          Plan Switcher
+          <span data-i18n="subtitle">Coding Plan Auto-Switch Manager</span>
+        </h1>
+      </div>
+      <div class="header-right">
+        <div class="lang-switch">
+          <button class="lang-btn active" data-lang="zh" onclick="setLanguage('zh')">中文</button>
+          <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+        </div>
+        <div class="uptime" id="uptime">Uptime: 0s</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard" data-i18n="tab_dashboard">Dashboard</button>
+      <button class="tab" data-tab="plans" data-i18n="tab_plans">Plans</button>
+      <button class="tab" data-tab="config" data-i18n="tab_config">Config</button>
+      <button class="tab" data-tab="usage" data-i18n="tab_usage">Usage</button>
+      <button class="tab" data-tab="agents" data-i18n="tab_agents">Agents</button>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="tab-content active">
+      <div class="stats">
+        <div class="stat-card">
+          <div class="label" data-i18n="total_requests">Total Requests</div>
+          <div class="value" id="total-requests">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label" data-i18n="total_switches">Switches</div>
+          <div class="value" id="total-switches">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label" data-i18n="active_plans">Active Plans</div>
+          <div class="value success" id="active-plans">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label" data-i18n="current_plan">Current Plan</div>
+          <div class="value" id="current-plan" style="font-size: 18px;">-</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title" data-i18n="plan_status">Plan Status</div>
+            <div class="card-subtitle" data-i18n="plan_status_desc">Real-time monitoring of all Coding Plans</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="resetAll()" data-i18n="reset_all">Reset All</button>
+        </div>
+        <div class="card-body" id="plan-list">
+          <div class="empty" data-i18n="loading">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plans Management -->
+    <div id="plans" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Coding Plans</div>
+            <div class="card-subtitle" data-i18n="plans_desc">Manage your API Keys and backup Plans</div>
+          </div>
+          <button class="btn btn-primary" onclick="showAddModal()"><span data-i18n="add_plan">+ Add Plan</span></button>
+        </div>
+        <div class="card-body" id="plans-list">
+          <div class="empty" data-i18n="no_plans">No Plans yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Config -->
+    <div id="config" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" data-i18n="failover_config">Failover Configuration</div>
+          <button class="btn btn-primary btn-sm" onclick="saveConfig()">💾 <span data-i18n="save_config">Save Config</span></button>
+        </div>
+        <div class="card-body">
+          <div class="config-grid" id="config-display">
+            <div class="config-section">
+              <h4 data-i18n="rate_limit_backoff">Rate Limit Backoff</h4>
+              <div class="config-item">
+                <span data-i18n="base_backoff_sec">Base Backoff (sec)</span>
+                <input type="number" class="form-input config-input" id="cfg-rate-limit-base" 
+                       style="width: 100px; text-align: right;" min="1" max="3600">
+              </div>
+              <div class="config-item">
+                <span data-i18n="backoff_multiplier">Multiplier</span>
+                <input type="number" class="form-input config-input" id="cfg-rate-limit-mult" 
+                       style="width: 100px; text-align: right;" min="1" max="10" step="0.5">
+              </div>
+              <div class="config-item">
+                <span data-i18n="max_backoff_sec">Max Backoff (sec)</span>
+                <input type="number" class="form-input config-input" id="cfg-rate-limit-max" 
+                       style="width: 100px; text-align: right;" min="60" max="86400">
+              </div>
+            </div>
+            <div class="config-section">
+              <h4 data-i18n="billing_error_backoff">Billing Error Backoff</h4>
+              <div class="config-item">
+                <span data-i18n="base_backoff_sec">Base Backoff (sec)</span>
+                <input type="number" class="form-input config-input" id="cfg-billing-base" 
+                       style="width: 100px; text-align: right;" min="60" max="86400">
+              </div>
+              <div class="config-item">
+                <span data-i18n="max_backoff_sec">Max Backoff (sec)</span>
+                <input type="number" class="form-input config-input" id="cfg-billing-max" 
+                       style="width: 100px; text-align: right;" min="60" max="86400">
+              </div>
+            </div>
+            <div class="config-section">
+              <h4 data-i18n="health_check">Health Check</h4>
+              <div class="config-item">
+                <span data-i18n="enabled">Enabled</span>
+                <select class="form-select config-input" id="cfg-health-enabled" style="width: 100px;">
+                  <option value="true" data-i18n="enabled">Enabled</option>
+                  <option value="false" data-i18n="disabled">Disabled</option>
+                </select>
+              </div>
+              <div class="config-item">
+                <span data-i18n="check_interval_sec">Interval (sec)</span>
+                <input type="number" class="form-input config-input" id="cfg-health-interval" 
+                       style="width: 100px; text-align: right;" min="30" max="3600">
+              </div>
+            </div>
+            <div class="config-section">
+              <h4 data-i18n="error_handling">Error Handling</h4>
+              <div class="config-item">
+                <span data-i18n="max_consecutive_errors">Max Consecutive Errors</span>
+                <input type="number" class="form-input config-input" id="cfg-max-errors" 
+                       style="width: 100px; text-align: right;" min="1" max="20">
+              </div>
+            </div>
+          </div>
+          
+          <div class="alert alert-info" style="margin-top: 20px;">
+            💡 <strong data-i18n="config_notes">Configuration Notes:</strong>
+            <ul style="margin: 8px 0 0 20px;">
+              <li data-i18n="config_note_1"><strong>Rate Limit Backoff</strong>: Strategy when API returns 429 rate limit error</li>
+              <li data-i18n="config_note_2"><strong>Billing Error Backoff</strong>: Strategy when API returns insufficient balance errors</li>
+              <li data-i18n="config_note_3"><strong>Health Check</strong>: Periodically check if cooled-down Plans can recover</li>
+              <li data-i18n="config_note_4"><strong>Max Consecutive Errors</strong>: Triggers longer backoff when reached</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Usage -->
+    <div id="usage" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" data-i18n="usage_guide">Usage Guide</div>
+        </div>
+        <div class="card-body">
+          <h3 style="margin-bottom: 12px;" data-i18n="api_endpoint">1. API Endpoint</h3>
+          <pre>http://127.0.0.1:8765/proxy/v1/chat/completions</pre>
+
+          <h3 style="margin: 20px 0 12px;" data-i18n="python_example">2. Python Example</h3>
+          <pre>from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://127.0.0.1:8765/proxy/v1",
+    api_key="any-key"  # Proxy will auto-replace
+)
+
+response = client.chat.completions.create(
+    model="claude-sonnet-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(response.choices[0].message.content)</pre>
+
+          <h3 style="margin: 20px 0 12px;" data-i18n="curl_example">3. cURL Example</h3>
+          <pre>curl http://127.0.0.1:8765/proxy/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer any-key" \
+  -d '{
+    "model": "claude-sonnet-4",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'</pre>
+
+          <h3 style="margin: 20px 0 12px;" data-i18n="how_it_works">4. How It Works</h3>
+          <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <p data-i18n="step1">1. Client sends request to proxy endpoint</p>
+            <p data-i18n="step2">2. Proxy selects an available Coding Plan</p>
+            <p data-i18n="step3">3. Request is forwarded to target API (using Plan's API Key)</p>
+            <p data-i18n="step4">4. If rate limited, automatically switches to next Plan</p>
+            <p data-i18n="step5">5. Returns 503 error when all Plans fail</p>
+          </div>
+
+          <h3 style="margin: 20px 0 12px;" data-i18n="response_headers">5. Response Headers</h3>
+          <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px;">
+            <p><code>X-Failover-Plan</code> - <span data-i18n="header_plan_id">Plan ID used</span></p>
+            <p><code>X-Failover-Attempts</code> - <span data-i18n="header_attempts">Number of attempts</span></p>
+          </div>
+
+          <h3 style="margin: 20px 0 12px;" data-i18n="model_auto_switch">6. Model Auto-Switch</h3>
+          <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <p data-i18n="model_switch_desc">When a Plan has a model configured, the proxy will automatically replace the model name in requests:</p>
+            <ul style="margin: 8px 0 0 20px;">
+              <li data-i18n="model_switch_1"><strong>Plan with model</strong>: Requests will use the Plan's model name</li>
+              <li data-i18n="model_switch_2"><strong>Plan without model</strong>: Requests will use the client's original model name</li>
+              <li data-i18n="model_switch_3"><strong>Use case</strong>: Configure different models for different providers (e.g., claude-sonnet-4 → deepseek-chat)</li>
+            </ul>
+          </div>
+
+          <h3 style="margin: 20px 0 12px;" data-i18n="env_config">7. Environment Variables</h3>
+          <pre># Linux/macOS
+export ANTHROPIC_BASE_URL="http://127.0.0.1:8765/proxy/v1"
+export ANTHROPIC_API_KEY="any-key"
+
+export OPENAI_API_BASE="http://127.0.0.1:8765/proxy/v1"
+export OPENAI_API_KEY="any-key"
+
+# Windows (PowerShell)
+$env:ANTHROPIC_BASE_URL="http://127.0.0.1:8765/proxy/v1"
+$env:ANTHROPIC_API_KEY="any-key"</pre>
+
+          <div class="alert alert-warning" style="margin-top: 20px;">
+            ⚠️ <span data-i18n="security_note">This service only listens on 127.0.0.1 by default, for local development only. Configure proper authentication and network isolation for production use.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent Config -->
+    <div id="agents" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" data-i18n="agent_config_guide">Agent Configuration Guide</div>
+        </div>
+        <div class="card-body">
+          
+          <!-- Claude Code -->
+          <div class="collapsible" onclick="toggleSection(this)">
+            <span>🤖 Claude Code (Anthropic CLI)</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-content">
+            <h4 data-i18n="env_config_recommended">Environment Variables (Recommended)</h4>
+            <pre># Linux/macOS
+export ANTHROPIC_BASE_URL="http://127.0.0.1:8765/proxy/v1"
+export ANTHROPIC_API_KEY="any-key"
+claude
+
+# Windows (PowerShell)
+$env:ANTHROPIC_BASE_URL="http://127.0.0.1:8765/proxy/v1"
+$env:ANTHROPIC_API_KEY="any-key"
+claude
+
+# Windows (CMD)
+set ANTHROPIC_BASE_URL=http://127.0.0.1:8765/proxy/v1
+set ANTHROPIC_API_KEY=any-key
+claude</pre>
+
+            <h4 data-i18n="startup_script">Startup Script</h4>
+            <pre># claude-with-failover.sh
+#!/bin/bash
+export ANTHROPIC_BASE_URL="http://127.0.0.1:8765/proxy/v1"
+export ANTHROPIC_API_KEY="any-key"
+claude "$@"</pre>
+          </div>
+
+          <!-- Cursor -->
+          <div class="collapsible" onclick="toggleSection(this)">
+            <span>🖱️ Cursor IDE</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-content">
+            <h4 data-i18n="method_settings">Method 1: Settings UI</h4>
+            <p style="margin-bottom: 8px;" data-i18n="cursor_step1">1. Open Cursor settings (<code>Ctrl/Cmd + ,</code>)</p>
+            <p style="margin-bottom: 8px;" data-i18n="cursor_step2">2. Search for "OpenAI" or "API"</p>
+            <p style="margin-bottom: 8px;" data-i18n="cursor_step3">3. Configure Base URL and API Key</p>
+
+            <h4 data-i18n="method_config_file">Method 2: Config File</h4>
+            <p style="margin-bottom: 8px;" data-i18n="edit_cursor_config">Edit <code>~/.cursor/settings.json</code>:</p>
+            <pre>{
+  "cursor.ai.baseUrl": "http://127.0.0.1:8765/proxy/v1",
+  "cursor.ai.apiKey": "any-key",
+  "cursor.ai.model": "claude-sonnet-4"
+}</pre>
+          </div>
+
+          <!-- Continue -->
+          <div class="collapsible" onclick="toggleSection(this)">
+            <span>▶️ Continue (VSCode/JetBrains)</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-content">
+            <p style="margin-bottom: 8px;" data-i18n="edit_continue_config">Edit <code>~/.continue/config.json</code>:</p>
+            <pre>{
+  "models": [
+    {
+      "title": "Claude Sonnet 4 (Failover)",
+      "provider": "openai",
+      "model": "claude-sonnet-4",
+      "apiBase": "http://127.0.0.1:8765/proxy/v1",
+      "apiKey": "any-key"
+    },
+    {
+      "title": "DeepSeek V3 (Failover)",
+      "provider": "openai",
+      "model": "deepseek-chat",
+      "apiBase": "http://127.0.0.1:8765/proxy/v1",
+      "apiKey": "any-key"
+    }
+  ]
+}</pre>
+          </div>
+
+          <!-- Aider -->
+          <div class="collapsible" onclick="toggleSection(this)">
+            <span>🔧 Aider</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-content">
+            <h4 data-i18n="env_method">Environment Variables</h4>
+            <pre># Set environment variables
+export OPENAI_API_BASE="http://127.0.0.1:8765/proxy/v1"
+export OPENAI_API_KEY="any-key"
+
+# Start aider
+aider --model claude-sonnet-4</pre>
+
+            <h4 data-i18n="cli_params">CLI Parameters</h4>
+            <pre>aider --api-base http://127.0.0.1:8765/proxy/v1 \
+      --api-key any-key \
+      --model claude-sonnet-4</pre>
+          </div>
+
+          <!-- Cline -->
+          <div class="collapsible" onclick="toggleSection(this)">
+            <span>⚡ Cline (VSCode Extension)</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-content">
+            <p style="margin-bottom: 8px;" data-i18n="cline_step1">1. Open VSCode settings</p>
+            <p style="margin-bottom: 8px;" data-i18n="cline_step2">2. Search for "Cline" or "API Provider"</p>
+            <p style="margin-bottom: 8px;" data-i18n="cline_step3">3. Select "OpenAI Compatible"</p>
+            <p style="margin-bottom: 16px;" data-i18n="cline_step4">4. Configure:</p>
+            <pre>Base URL: http://127.0.0.1:8765/proxy/v1
+API Key: any-key
+Model: claude-sonnet-4</pre>
+          </div>
+
+          <!-- Universal Script -->
+          <div class="collapsible" onclick="toggleSection(this)">
+            <span>📜 <span data-i18n="universal_script">Universal Startup Script</span></span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-content">
+            <h4>Linux/macOS: start-with-failover.sh</h4>
+            <pre>#!/bin/bash
+
+# Plan Switcher Config
+export ANTHROPIC_BASE_URL="http://127.0.0.1:8765/proxy/v1"
+export ANTHROPIC_API_KEY="any-key"
+export OPENAI_API_BASE="http://127.0.0.1:8765/proxy/v1"
+export OPENAI_BASE_URL="http://127.0.0.1:8765/proxy/v1"
+export OPENAI_API_KEY="any-key"
+
+echo "🚀 Plan Switcher configured"
+echo "   Proxy URL: http://127.0.0.1:8765"
+echo ""
+
+# Start tool
+exec "$@"</pre>
+
+            <p style="margin: 16px 0 8px 0;" data-i18n="script_usage">Usage:</p>
+            <pre>chmod +x start-with-failover.sh
+./start-with-failover.sh claude
+./start-with-failover.sh aider --model claude-sonnet-4</pre>
+
+            <h4>Windows: start-with-failover.bat</h4>
+            <pre>@echo off
+set ANTHROPIC_BASE_URL=http://127.0.0.1:8765/proxy/v1
+set ANTHROPIC_API_KEY=any-key
+set OPENAI_API_BASE=http://127.0.0.1:8765/proxy/v1
+set OPENAI_API_KEY=any-key
+
+echo Plan Switcher configured
+%*</pre>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Plan Modal -->
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" data-i18n="add_new_plan">Add New Coding Plan</div>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Plan ID *</label>
+          <input type="text" class="form-input" id="plan-id" placeholder="e.g., claude-primary">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="plan_name">Name</label>
+          <input type="text" class="form-input" id="plan-name" placeholder="e.g., Claude Primary Plan">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Provider *</label>
+          <select class="form-select" id="plan-provider" onchange="onProviderChange()">
+            <optgroup label="🌐 国际供应商 (International)">
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="openai">OpenAI (GPT)</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="google">Google (Gemini)</option>
+              <option value="mistral">Mistral AI</option>
+            </optgroup>
+            <optgroup label="🇨🇳 国内供应商 - 标准API">
+              <option value="deepseek">DeepSeek</option>
+              <option value="zhipu">智谱AI (GLM)</option>
+              <option value="moonshot">Moonshot (Kimi)</option>
+              <option value="qwen">通义千问 (Qwen/百炼)</option>
+              <option value="baidu">文心一言 (ERNIE)</option>
+              <option value="minimax">MiniMax</option>
+              <option value="doubao">豆包 (火山引擎)</option>
+              <option value="yi">零一万物 (Yi)</option>
+              <option value="siliconflow">SiliconFlow</option>
+            </optgroup>
+            <optgroup label="💻 Coding Plan 专用端点 (推荐用于AI编程工具)">
+              <option value="zhipu_coding">智谱AI - GLM Coding Plan</option>
+              <option value="qwen_coding">阿里云百炼 - Qwen Coding Plan</option>
+              <option value="kimi_coding">月之暗面 - Kimi Coding Plan</option>
+              <option value="minimax_coding">MiniMax Coding Plan (国内)</option>
+              <option value="minimax_coding_intl">MiniMax Coding Plan (国际)</option>
+              <option value="doubao_coding">火山方舟 - Coding Plan (Anthropic)</option>
+              <option value="doubao_coding_openai">火山方舟 - Coding Plan (OpenAI)</option>
+            </optgroup>
+            <optgroup label="🔧 Anthropic 兼容端点">
+              <option value="zhipu_anthropic">智谱AI - Anthropic 兼容</option>
+            </optgroup>
+            <optgroup label="⚙️ 其他">
+              <option value="other">自定义 (Custom URL)</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">API Key *</label>
+          <input type="password" class="form-input" id="plan-apikey" placeholder="sk-...">
+        </div>
+        <div class="form-group" id="baseurl-group">
+          <label class="form-label" data-i18n="custom_base_url">Custom Base URL <span id="baseurl-required" style="display:none;color:var(--danger);">*</span></label>
+          <input type="text" class="form-input" id="plan-baseurl" placeholder="https://api.anthropic.com">
+          <div class="form-hint" id="baseurl-hint">Optional, leave empty for default URL</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="model_name">Model Name</label>
+          <input type="text" class="form-input" id="plan-model" placeholder="e.g., claude-sonnet-4, deepseek-chat">
+          <div class="form-hint" data-i18n="model_hint">Optional, override model name in requests. Leave empty to use client's model.</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" data-i18n="priority">Priority</label>
+            <input type="number" class="form-input" id="plan-priority" value="0" min="0">
+            <div class="form-hint" data-i18n="priority_hint">Lower number = higher priority</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="weight">Weight</label>
+            <input type="number" class="form-input" id="plan-weight" value="100" min="1">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="hideAddModal()" data-i18n="cancel">Cancel</button>
+        <button class="btn btn-primary" onclick="addPlan()" data-i18n="add">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================
+    // Internationalization (i18n)
+    // ============================================
+    
+    const translations = {
+      zh: {
+        subtitle: 'Coding Plan 自动切换管理',
+        tab_dashboard: '仪表盘',
+        tab_plans: 'Plans 管理',
+        tab_config: '配置',
+        tab_usage: '使用说明',
+        tab_agents: 'Agent 配置',
+        total_requests: '总请求数',
+        total_switches: '切换次数',
+        active_plans: 'Active Plans',
+        current_plan: '当前 Plan',
+        plan_status: 'Plan 状态',
+        plan_status_desc: '实时监控所有 Coding Plans',
+        reset_all: '重置所有',
+        loading: '加载中...',
+        plans_desc: '管理你的 API Keys 和备用 Plans',
+        add_plan: '+ 添加 Plan',
+        no_plans: '暂无 Plans',
+        no_plans_add: '暂无 Plans，请前往 "Plans 管理" 添加',
+        failover_config: '故障转移配置',
+        save_config: '保存配置',
+        rate_limit_backoff: '限流退避',
+        base_backoff_sec: '基础退避时间 (秒)',
+        backoff_multiplier: '退避倍数',
+        max_backoff_sec: '最大退避时间 (秒)',
+        billing_error_backoff: '计费错误退避',
+        health_check: '健康检查',
+        enabled: '启用',
+        disabled: '禁用',
+        check_interval_sec: '检查间隔 (秒)',
+        error_handling: '错误处理',
+        max_consecutive_errors: '最大连续错误',
+        config_notes: '配置说明：',
+        config_note_1: '<strong>限流退避</strong>：当 API 返回 429 限流错误时的退避策略',
+        config_note_2: '<strong>计费错误退避</strong>：当 API 返回余额不足等计费错误时的退避策略',
+        config_note_3: '<strong>健康检查</strong>：定期检查冷却中的 Plan 是否可以恢复',
+        config_note_4: '<strong>最大连续错误</strong>：连续错误达到此数值后将触发更长的退避时间',
+        usage_guide: '使用说明',
+        api_endpoint: '1. API 端点',
+        python_example: '2. Python 示例',
+        curl_example: '3. cURL 示例',
+        how_it_works: '4. 工作原理',
+        step1: '1. 客户端请求发送到代理端点',
+        step2: '2. 代理选择一个可用的 Coding Plan',
+        step3: '3. 请求被转发到目标 API（使用 Plan 的 API Key）',
+        step4: '4. 如果遇到限流，自动切换到下一个 Plan',
+        step5: '5. 所有 Plan 都失败时返回 503 错误',
+        response_headers: '5. 响应头',
+        header_plan_id: '使用的 Plan ID',
+        header_attempts: '尝试次数',
+        env_config: '6. 环境变量配置',
+        security_note: '此服务默认只监听在 127.0.0.1，仅用于本地开发。如需在生产环境使用，请配置适当的认证和网络隔离。',
+        agent_config_guide: 'Agent 工具配置指南',
+        env_config_recommended: '环境变量配置（推荐）',
+        startup_script: '创建启动脚本',
+        method_settings: '方法一：设置界面',
+        cursor_step1: '1. 打开 Cursor 设置（<code>Ctrl/Cmd + ,</code>）',
+        cursor_step2: '2. 搜索 "OpenAI" 或 "API"',
+        cursor_step3: '3. 配置 Base URL 和 API Key',
+        method_config_file: '方法二：配置文件',
+        edit_cursor_config: '编辑 <code>~/.cursor/settings.json</code>：',
+        edit_continue_config: '编辑 <code>~/.continue/config.json</code>：',
+        env_method: '环境变量方式',
+        cli_params: '命令行参数',
+        cline_step1: '1. 打开 VSCode 设置',
+        cline_step2: '2. 搜索 "Cline" 或 "API Provider"',
+        cline_step3: '3. 选择 "OpenAI Compatible"',
+        cline_step4: '4. 配置：',
+        universal_script: '通用启动脚本',
+        script_usage: '使用方法：',
+        add_new_plan: '添加新的 Coding Plan',
+        plan_name: '名称',
+        custom_base_url: '自定义 Base URL',
+        baseurl_hint: '选填，留空使用默认 URL',
+        baseurl_required: '必填，请输入完整的 API Base URL',
+        priority: '优先级',
+        priority_hint: '数字越小优先级越高',
+        weight: '权重',
+        cancel: '取消',
+        add: '添加',
+        success_rate: '成功率',
+        requests: '请求',
+        errors: '错误',
+        reset: '重置',
+        delete: '删除',
+        config_saved: '配置已保存',
+        save_failed: '保存失败',
+        plan_added: '添加成功',
+        add_failed: '添加失败',
+        fill_required: '请填写 Plan ID 和 API Key',
+        other_url_required: '选择 "其他" 时必须填写 Base URL',
+        model_name: '模型名称',
+        model_hint: '选填，覆盖请求中的模型名。留空则使用客户端发送的模型名',
+        model_auto_switch: '模型自动切换',
+        model_switch_desc: '当 Plan 配置了模型名称时，代理会自动替换请求中的模型名：',
+        model_switch_1: '<strong>配置了模型的 Plan</strong>：请求将使用 Plan 配置的模型名',
+        model_switch_2: '<strong>未配置模型的 Plan</strong>：请求将使用客户端原始发送的模型名',
+        model_switch_3: '<strong>应用场景</strong>：为不同供应商配置不同模型（如 claude-sonnet-4 → deepseek-chat）',
+      },
+      en: {
+        subtitle: 'Coding Plan Auto-Switch Manager',
+        tab_dashboard: 'Dashboard',
+        tab_plans: 'Plans',
+        tab_config: 'Config',
+        tab_usage: 'Usage',
+        tab_agents: 'Agents',
+        total_requests: 'Total Requests',
+        total_switches: 'Switches',
+        active_plans: 'Active Plans',
+        current_plan: 'Current Plan',
+        plan_status: 'Plan Status',
+        plan_status_desc: 'Real-time monitoring of all Coding Plans',
+        reset_all: 'Reset All',
+        loading: 'Loading...',
+        plans_desc: 'Manage your API Keys and backup Plans',
+        add_plan: '+ Add Plan',
+        no_plans: 'No Plans yet',
+        no_plans_add: 'No Plans configured. Go to "Plans" tab to add one.',
+        failover_config: 'Failover Configuration',
+        save_config: 'Save Config',
+        rate_limit_backoff: 'Rate Limit Backoff',
+        base_backoff_sec: 'Base Backoff (sec)',
+        backoff_multiplier: 'Multiplier',
+        max_backoff_sec: 'Max Backoff (sec)',
+        billing_error_backoff: 'Billing Error Backoff',
+        health_check: 'Health Check',
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        check_interval_sec: 'Interval (sec)',
+        error_handling: 'Error Handling',
+        max_consecutive_errors: 'Max Consecutive Errors',
+        config_notes: 'Configuration Notes:',
+        config_note_1: '<strong>Rate Limit Backoff</strong>: Strategy when API returns 429 rate limit error',
+        config_note_2: '<strong>Billing Error Backoff</strong>: Strategy when API returns insufficient balance errors',
+        config_note_3: '<strong>Health Check</strong>: Periodically check if cooled-down Plans can recover',
+        config_note_4: '<strong>Max Consecutive Errors</strong>: Triggers longer backoff when reached',
+        usage_guide: 'Usage Guide',
+        api_endpoint: '1. API Endpoint',
+        python_example: '2. Python Example',
+        curl_example: '3. cURL Example',
+        how_it_works: '4. How It Works',
+        step1: '1. Client sends request to proxy endpoint',
+        step2: '2. Proxy selects an available Coding Plan',
+        step3: '3. Request is forwarded to target API (using Plan\'s API Key)',
+        step4: '4. If rate limited, automatically switches to next Plan',
+        step5: '5. Returns 503 error when all Plans fail',
+        response_headers: '5. Response Headers',
+        header_plan_id: 'Plan ID used',
+        header_attempts: 'Number of attempts',
+        env_config: '6. Environment Variables',
+        security_note: 'This service only listens on 127.0.0.1 by default, for local development only. Configure proper authentication and network isolation for production use.',
+        agent_config_guide: 'Agent Configuration Guide',
+        env_config_recommended: 'Environment Variables (Recommended)',
+        startup_script: 'Startup Script',
+        method_settings: 'Method 1: Settings UI',
+        cursor_step1: '1. Open Cursor settings (<code>Ctrl/Cmd + ,</code>)',
+        cursor_step2: '2. Search for "OpenAI" or "API"',
+        cursor_step3: '3. Configure Base URL and API Key',
+        method_config_file: 'Method 2: Config File',
+        edit_cursor_config: 'Edit <code>~/.cursor/settings.json</code>:',
+        edit_continue_config: 'Edit <code>~/.continue/config.json</code>:',
+        env_method: 'Environment Variables',
+        cli_params: 'CLI Parameters',
+        cline_step1: '1. Open VSCode settings',
+        cline_step2: '2. Search for "Cline" or "API Provider"',
+        cline_step3: '3. Select "OpenAI Compatible"',
+        cline_step4: '4. Configure:',
+        universal_script: 'Universal Startup Script',
+        script_usage: 'Usage:',
+        add_new_plan: 'Add New Coding Plan',
+        plan_name: 'Name',
+        custom_base_url: 'Custom Base URL',
+        baseurl_hint: 'Optional, leave empty for default URL',
+        baseurl_required: 'Required, enter the full API Base URL',
+        priority: 'Priority',
+        priority_hint: 'Lower number = higher priority',
+        weight: 'Weight',
+        cancel: 'Cancel',
+        add: 'Add',
+        success_rate: 'Success Rate',
+        requests: 'requests',
+        errors: 'errors',
+        reset: 'Reset',
+        delete: 'Delete',
+        config_saved: 'Config saved',
+        save_failed: 'Save failed',
+        plan_added: 'Plan added',
+        add_failed: 'Add failed',
+        fill_required: 'Please fill in Plan ID and API Key',
+        other_url_required: 'Base URL is required when "Other" is selected',
+        model_name: 'Model Name',
+        model_hint: 'Optional, override model name in requests. Leave empty to use client\'s model.',
+        model_auto_switch: 'Model Auto-Switch',
+        model_switch_desc: 'When a Plan has a model configured, the proxy will automatically replace the model name in requests:',
+        model_switch_1: '<strong>Plan with model</strong>: Requests will use the Plan\'s model name',
+        model_switch_2: '<strong>Plan without model</strong>: Requests will use the client\'s original model name',
+        model_switch_3: '<strong>Use case</strong>: Configure different models for different providers (e.g., claude-sonnet-4 → deepseek-chat)',
+      }
+    };
+
+    let currentLang = localStorage.getItem('lang') || 'zh';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('lang', lang);
+      
+      // Update language buttons
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+      });
+      
+      // Update all translatable elements
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (translations[lang][key]) {
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            el.placeholder = translations[lang][key];
+          } else {
+            el.innerHTML = translations[lang][key];
+          }
+        }
+      });
+
+      // Update baseurl hint based on current provider
+      onProviderChange();
+    }
+
+    function t(key) {
+      return translations[currentLang][key] || key;
+    }
+
+    // ============================================
+    // Core Application Logic
+    // ============================================
+
+    let status = null;
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Collapsible sections
+    function toggleSection(el) {
+      const content = el.nextElementSibling;
+      const arrow = el.querySelector('.arrow');
+      content.classList.toggle('show');
+      arrow.classList.toggle('open');
+    }
+
+    // Provider change handler - with null safety
+    function onProviderChange() {
+      const providerSelect = document.getElementById('plan-provider');
+      const baseurlRequired = document.getElementById('baseurl-required');
+      const baseurlHint = document.getElementById('baseurl-hint');
+      const baseurlInput = document.getElementById('plan-baseurl');
+      const modelInput = document.getElementById('plan-model');
+
+      // Safety check - return early if elements are not found
+      if (!providerSelect || !baseurlInput) {
+        console.warn('onProviderChange: Required elements not found in DOM');
+        return;
+      }
+
+      const provider = providerSelect.value;
+
+      // Recommended models for each Coding Plan provider
+      const recommendedModels = {
+        // Coding Plan specific models (latest as of 2026)
+        zhipu_coding: 'GLM-5',  // 智谱最新旗舰模型
+        qwen_coding: 'Qwen3-Coder-Next',  // 阿里云百炼编程模型
+        kimi_coding: 'kimi-k2',  // 月之暗面 Kimi
+        minimax_coding: 'MiniMax-M2.5',  // MiniMax 国内
+        minimax_coding_intl: 'MiniMax-M2.5',  // MiniMax 国际
+        doubao_coding: 'ark-code-latest',  // 火山方舟自动选择最佳模型
+        doubao_coding_openai: 'ark-code-latest',  // 火山方舟 OpenAI 兼容
+        
+        // Anthropic compatible endpoints
+        zhipu_anthropic: 'GLM-5',
+        
+        // Standard providers - leave empty (user's choice)
+        anthropic: '',
+        openai: '',
+        openrouter: '',
+        google: '',
+        mistral: '',
+        deepseek: '',
+        zhipu: '',
+        moonshot: '',
+        qwen: '',
+        baidu: '',
+        minimax: '',
+        doubao: '',
+        yi: '',
+        siliconflow: '',
+        other: '',
+      };
+
+      // Auto-fill recommended model for Coding Plan providers
+      if (modelInput && recommendedModels.hasOwnProperty(provider)) {
+        if (recommendedModels[provider]) {
+          modelInput.value = recommendedModels[provider];
+          modelInput.placeholder = `Recommended: ${recommendedModels[provider]}`;
+        } else {
+          modelInput.value = '';
+          modelInput.placeholder = 'e.g., claude-sonnet-4, deepseek-chat';
+        }
+      }
+
+      if (provider === 'other') {
+        if (baseurlRequired) baseurlRequired.style.display = 'inline';
+        if (baseurlHint) baseurlHint.textContent = t('baseurl_required');
+        baseurlInput.placeholder = 'https://api.example.com/v1';
+      } else {
+        if (baseurlRequired) baseurlRequired.style.display = 'none';
+        if (baseurlHint) baseurlHint.textContent = t('baseurl_hint');
+        
+        const defaultUrls = {
+          // International Providers
+          anthropic: 'https://api.anthropic.com',
+          openai: 'https://api.openai.com',
+          openrouter: 'https://openrouter.ai/api',
+          google: 'https://generativelanguage.googleapis.com',
+          mistral: 'https://api.mistral.ai',
+          
+          // Chinese Providers - Standard API
+          deepseek: 'https://api.deepseek.com',
+          zhipu: 'https://open.bigmodel.cn/api/paas/v4',
+          moonshot: 'https://api.moonshot.cn/v1',
+          qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+          baidu: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop',
+          minimax: 'https://api.minimax.chat/v1',
+          doubao: 'https://ark.cn-beijing.volces.com/api/v3',
+          yi: 'https://api.lingyiwanwu.com/v1',
+          siliconflow: 'https://api.siliconflow.cn/v1',
+          
+          // Coding Plan Specific Endpoints
+          zhipu_coding: 'https://open.bigmodel.cn/api/anthropic',
+          qwen_coding: 'https://coding.dashscope.aliyuncs.com/v1',
+          kimi_coding: 'https://api.moonshot.cn/anthropic',
+          minimax_coding: 'https://api.minimax.chat/anthropic',
+          minimax_coding_intl: 'https://api.minimax.io/anthropic',
+          doubao_coding: 'https://ark.cn-beijing.volces.com/api/coding',
+          doubao_coding_openai: 'https://ark.cn-beijing.volces.com/api/coding/v3',
+          
+          // Anthropic-compatible endpoints
+          zhipu_anthropic: 'https://open.bigmodel.cn/api/anthropic',
+        };
+        
+        if (defaultUrls[provider]) {
+          baseurlInput.placeholder = defaultUrls[provider];
+        }
+      }
+    }
+
+    // Load status
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        if (data.success) {
+          status = data.data;
+          updateUI();
+        }
+      } catch (e) {
+        console.error('Failed to load status:', e);
+      }
+    }
+
+    // Update UI
+    function updateUI() {
+      if (!status) return;
+
+      // Stats
+      document.getElementById('total-requests').textContent = status.totalRequests;
+      document.getElementById('total-switches').textContent = status.totalSwitches;
+      
+      const plans = Object.values(status.plans);
+      const activePlans = plans.filter(p => p.status === 'active').length;
+      document.getElementById('active-plans').textContent = activePlans;
+      document.getElementById('current-plan').textContent = status.currentPlanId || '-';
+
+      // Uptime
+      document.getElementById('uptime').textContent = 'Uptime: ' + formatUptime(status.uptime);
+
+      // Plan list
+      const planListHtml = plans.length === 0 
+        ? `<div class="empty">${t('no_plans_add')}</div>`
+        : plans.map(plan => renderPlan(plan)).join('');
+      document.getElementById('plan-list').innerHTML = planListHtml;
+      document.getElementById('plans-list').innerHTML = planListHtml || `<div class="empty">${t('no_plans')}</div>`;
+
+      // Config
+      const cfg = status.config;
+      document.getElementById('cfg-rate-limit-base').value = cfg.rateLimitBackoffBase;
+      document.getElementById('cfg-rate-limit-mult').value = cfg.rateLimitBackoffMultiplier;
+      document.getElementById('cfg-rate-limit-max').value = cfg.rateLimitBackoffMax;
+      document.getElementById('cfg-billing-base').value = cfg.billingBackoffBase;
+      document.getElementById('cfg-billing-max').value = cfg.billingBackoffMax;
+      document.getElementById('cfg-health-enabled').value = cfg.healthCheckEnabled.toString();
+      document.getElementById('cfg-health-interval').value = cfg.healthCheckInterval;
+      document.getElementById('cfg-max-errors').value = cfg.maxConsecutiveErrors;
+    }
+
+    // Save Config
+    async function saveConfig() {
+      const config = {
+        rateLimitBackoffBase: parseInt(document.getElementById('cfg-rate-limit-base').value) || 60,
+        rateLimitBackoffMultiplier: parseFloat(document.getElementById('cfg-rate-limit-mult').value) || 5,
+        rateLimitBackoffMax: parseInt(document.getElementById('cfg-rate-limit-max').value) || 3600,
+        billingBackoffBase: parseInt(document.getElementById('cfg-billing-base').value) || 18000,
+        billingBackoffMax: parseInt(document.getElementById('cfg-billing-max').value) || 86400,
+        healthCheckEnabled: document.getElementById('cfg-health-enabled').value === 'true',
+        healthCheckInterval: parseInt(document.getElementById('cfg-health-interval').value) || 300,
+        maxConsecutiveErrors: parseInt(document.getElementById('cfg-max-errors').value) || 5,
+      };
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          toast(t('config_saved'), 'success');
+          loadStatus();
+        } else {
+          toast(t('save_failed') + ': ' + (data.error || 'Unknown error'), 'error');
+        }
+      } catch (e) {
+        toast(t('save_failed') + ': ' + e.message, 'error');
+      }
+    }
+
+    // Provider display names
+    const PROVIDER_NAMES = {
+      // International
+      anthropic: 'Anthropic',
+      openai: 'OpenAI',
+      openrouter: 'OpenRouter',
+      google: 'Google',
+      mistral: 'Mistral',
+      
+      // Chinese - Standard
+      deepseek: 'DeepSeek',
+      zhipu: '智谱AI',
+      moonshot: 'Moonshot',
+      qwen: '通义千问',
+      baidu: '文心一言',
+      minimax: 'MiniMax',
+      doubao: '豆包',
+      yi: '零一万物',
+      siliconflow: 'SiliconFlow',
+      
+      // Coding Plan
+      zhipu_coding: '智谱GLM Coding',
+      qwen_coding: '百炼 Coding',
+      kimi_coding: 'Kimi Coding',
+      minimax_coding: 'MiniMax Coding',
+      minimax_coding_intl: 'MiniMax Coding',
+      doubao_coding: '方舟 Coding',
+      doubao_coding_openai: '方舟 Coding',
+      
+      // Anthropic Compatible
+      zhipu_anthropic: '智谱AI (Anthropic)',
+      
+      other: '自定义',
+    };
+
+    function renderPlan(plan) {
+      const badgeClass = {
+        'active': 'badge-active',
+        'cooldown': 'badge-cooldown',
+        'disabled': 'badge-disabled',
+      }[plan.status] || 'badge-active';
+
+      const isCurrent = status.currentPlanId === plan.id;
+      const successRate = plan.totalRequests > 0 
+        ? ((plan.successRequests / plan.totalRequests) * 100).toFixed(1)
+        : '100.0';
+
+      const providerName = PROVIDER_NAMES[plan.provider] || plan.provider;
+      const modelDisplay = plan.model ? ` · Model: ${plan.model}` : '';
+
+      let extraInfo = '';
+      if (plan.status === 'cooldown' && plan.cooldownUntil) {
+        extraInfo = `<div style="color: var(--warning); font-size: 13px; margin-top: 8px;">⏳ Cooldown until: ${formatDate(plan.cooldownUntil)}</div>`;
+      } else if (plan.status === 'disabled') {
+        extraInfo = `<div style="color: var(--danger); font-size: 13px; margin-top: 8px;">❌ ${plan.disabledReason || 'Disabled'} until: ${formatDate(plan.disabledUntil)}</div>`;
+      }
+
+      const errorInfo = plan.lastError 
+        ? `<div class="plan-error">Last Error: ${plan.lastError.substring(0, 200)}</div>`
+        : '';
+
+      return `
+        <div class="plan-item">
+          <div class="plan-info" style="flex: 1;">
+            <h3>
+              ${plan.name}
+              <span class="badge ${badgeClass}">${plan.status}</span>
+              ${isCurrent ? '<span class="badge badge-current">CURRENT</span>' : ''}
+            </h3>
+            <p>${providerName}${modelDisplay} · Priority: ${plan.priority}</p>
+            <div class="plan-meta">
+              <span><strong>${t('success_rate')}:</strong> ${successRate}%</span>
+              <span><strong>${t('requests')}:</strong> ${plan.totalRequests}</span>
+              <span><strong>${t('errors')}:</strong> ${plan.consecutiveErrors}</span>
+            </div>
+            ${extraInfo}
+            ${errorInfo}
+          </div>
+          <div class="plan-actions" style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary btn-sm" onclick="resetPlan('${plan.id}')">${t('reset')}</button>
+            <button class="btn btn-danger btn-sm" onclick="deletePlan('${plan.id}')">${t('delete')}</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Modal functions
+    function showAddModal() {
+      document.getElementById('add-modal').classList.add('active');
+      // Reset form
+      document.getElementById('plan-id').value = '';
+      document.getElementById('plan-name').value = '';
+      document.getElementById('plan-provider').value = 'anthropic';
+      document.getElementById('plan-apikey').value = '';
+      document.getElementById('plan-baseurl').value = '';
+      document.getElementById('plan-model').value = '';
+      document.getElementById('plan-priority').value = '0';
+      document.getElementById('plan-weight').value = '100';
+      // Trigger provider change to set default URL
+      onProviderChange();
+    }
+
+    function hideAddModal() {
+      document.getElementById('add-modal').classList.remove('active');
+    }
+
+    // Add Plan
+    async function addPlan() {
+      const id = document.getElementById('plan-id').value.trim();
+      const name = document.getElementById('plan-name').value.trim() || id;
+      const provider = document.getElementById('plan-provider').value;
+      const apiKey = document.getElementById('plan-apikey').value.trim();
+      const baseUrl = document.getElementById('plan-baseurl').value.trim();
+      const model = document.getElementById('plan-model').value.trim();
+      const priority = parseInt(document.getElementById('plan-priority').value) || 0;
+      const weight = parseInt(document.getElementById('plan-weight').value) || 100;
+
+      if (!id || !apiKey) {
+        toast(t('fill_required'), 'error');
+        return;
+      }
+
+      if (provider === 'other' && !baseUrl) {
+        toast(t('other_url_required'), 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/plans', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, name, provider, apiKey, baseUrl: baseUrl || null, model: model || null, priority, weight })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          toast(t('plan_added'), 'success');
+          hideAddModal();
+          loadStatus();
+          // Clear form
+          document.getElementById('plan-id').value = '';
+          document.getElementById('plan-name').value = '';
+          document.getElementById('plan-apikey').value = '';
+          document.getElementById('plan-baseurl').value = '';
+          document.getElementById('plan-model').value = '';
+          document.getElementById('plan-priority').value = '0';
+          document.getElementById('plan-weight').value = '100';
+        } else {
+          toast(t('add_failed') + ': ' + (data.error || 'Unknown error'), 'error');
+        }
+      } catch (e) {
+        toast(t('add_failed') + ': ' + e.message, 'error');
+      }
+    }
+
+    // Delete Plan
+    async function deletePlan(id) {
+      if (!confirm(`Delete plan "${id}"?`)) return;
+      
+      try {
+        const res = await fetch(`/api/plans?id=${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          toast(data.message, 'success');
+          loadStatus();
+        } else {
+          toast(data.error, 'error');
+        }
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    }
+
+    // Reset Plan
+    async function resetPlan(planId) {
+      try {
+        const res = await fetch('/api/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast(data.message, 'success');
+          loadStatus();
+        } else {
+          toast(data.error, 'error');
+        }
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    }
+
+    // Reset All
+    async function resetAll() {
+      if (!confirm(currentLang === 'zh' ? '重置所有 Plans？' : 'Reset all plans?')) return;
+      
+      try {
+        const res = await fetch('/api/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ resetAll: true })
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast(data.message, 'success');
+          loadStatus();
+        } else {
+          toast(data.error, 'error');
+        }
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    }
+
+    // Toast notification
+    function toast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Utility functions
+    function formatUptime(seconds) {
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor((seconds % 86400) / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      
+      if (days > 0) return `${days}d ${hours}h ${mins}m`;
+      if (hours > 0) return `${hours}h ${mins}m ${secs}s`;
+      if (mins > 0) return `${mins}m ${secs}s`;
+      return `${secs}s`;
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleString();
+    }
+
+    // Initialize
+    setLanguage(currentLang);
+    loadStatus();
+    setInterval(loadStatus, 5000);
+  </script>
+</body>
+</html>
